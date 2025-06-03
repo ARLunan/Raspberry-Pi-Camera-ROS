@@ -29,14 +29,16 @@ Choose OS, Select Other General Purpose OS\>Select Ubuntu>Ubuntu Desktop 24.04.2
 Insert suitable SD Card in the USB Reader Adapter>Choose Storage\>Next  
 Check Kernal, of which the current latest is 5.15  
 \$ uname -a  
-Linux rp4-ub22h-mt 5.15.0-1073-raspi#76-Ubuntu SMP PREEMPT Wed Feb 19
+Linux rp4-ub24h-mt 5.15.0-1073-raspi#76-Ubuntu SMP PREEMPT Wed Feb 19
 10:39:24 UTC 2025 aarch64 aarch64 aarch64 GNU/Linux  
 
 #### 1.2 Install Camera Cable into Camera and MIPI Connector**
 Note the Cable has a smaller 22x0.5 mm end for the RPi and 15x1 mm end
 for the camera.  
 On Camera end of cable: insert cable with Blue or Orange side facing
-backwards.  
+away from the USB & Ethernet connectors.
+
+Preferably to use the "cam1" connector as that is the Defefault and has more performance parameters.   
 On RPI End insert cable with Blue or Orange side facing USB Connectors
 
 #### 1.3 Add User ( in this case ubuntu), to video group**  
@@ -53,10 +55,12 @@ package that used to subscribe to and publish images. It provides
 transparent support for transporting images in low-bandwidth compressed
 formats.
 
-Install raspi-config,  v4l-utils. ros-jazzy-image-transport-plugins,
-
-\$ sudo apt-get install raspi-config ros-jazzy-image-transport-plugins
+Install raspi-config, v4l-utils. ros-jazzy-image-transport-plugins
+\$ sudo apt-get install ros-jazzy-image-transport-plugins
 v4l-utils
+
+While some camera installation procedure incldue installing the Raspberry Pi raspi-config, it is **NOT** recommended be used to set the camera parameers due reports of breaking the SD Card. It is useful for setting other Interface Paramnets, such is 12C if that is used.
+
 
 - raspi-config: A tool for configuring camera device connection on
   Raspberry Pi.
@@ -77,26 +81,29 @@ Run \$ sudo apt install raspi-config
 
 **On the Raspberry Pi /boot/firmware/config.sys file**
 
-Either run the OS Apps, **\$ sudo raspi-config** and select **Interfaces
-\> Enable Camera** or manually run edit by: **\$ sudo nano
+Manually edit by: **\$ sudo nano
 /boot/firmware/config.sys**
 
-\# Camera Models  
-\[all]  
-\# Model 2 on Port Cam 0  
-dtoverlay=imx219, cam0  
-\ #Model 3  
-dtoverlay= Imx708, cam0  
 \# Autoload overlays for any recognized cameras or displays that are
-\# attached to the CSI/DSI ports. Please note this is for libcamera support,
-\ **not** for the legacy camera stack  
+\# attached to the CSI/DSI ports. Please note this is for libcamera support as used in these procedures,
+ **not** for the legacy camera stack  
 camera\_auto\_detect=0  
-\# Commen t out legacy camera stack  
+\# Comment out legacy camera stack  
 \# with v4l2 Package  
 \#camera\_auto\_detect=1  
 start_x=1  
 display\_auto\_detect=1  
-\[all]
+
+Put this line at the very end of the config.txt file **NOT** in the middle along with the other camera paramters.
+
+\# Camera Models  
+\[all]  
+\# Model 2 on Port Cam 1  
+dtoverlay=imx219, cam0  
+\ #Model 3  
+dtoverlay= Imx708, cam1  
+
+**Reboot the Raspberry Pi**
 
 Running v4l2 will list the “legacy” supported camera  
 rp1-cfe (platform:1f00110000.csi):  
@@ -137,18 +144,18 @@ Packages
 - **libcamera-ipa** complex camera support library (IPA modules)
 - **libcamera-tools** complex camera support library (tools)
 - **libcamera-v4l2** complex camera support library (V4L2 module)
-- **libcamera0.4** complex camera support library
+- **libcamera0.5** complex camera support library
 - **python3-libcamera** complex camera support library (Python bindings)
 
 **Important Warning:** 
 - The contents of [Marco's Personal Package Archives](https://launchpad.net/~marco-sonic/+archive/ubuntu/rasppios) are _not checked or monitored_. You install software from them **at your own risk**. 
 
-$ sudo add-apt-repository ppa:marco\-sonic/rasppios  
-$ sudo apt update && $ sudo apt upgrade  
+\$ sudo add-apt-repository ppa:marco\-sonic/rasppios  
+\$ sudo apt update && \$ sudo apt upgrade  
 
 On my machine previously installed "libcamera" package was automatically upgraded with Marco's binary.
 
-$ sudo apt install libcamera-tools rpicam-apps-lite python3-picamera2
+\$ sudo apt install libcamera-tools rpicam-apps-lite python3-picamera2
 
 Make sure you are a member of group "_video_", for example my "_ros_" account already is:
 
@@ -170,7 +177,7 @@ If during a system update or after running rosdep Marco's packages are replaced,
 <https://github.com/slgrobotics/robots_bringup/blob/main/Docs/Sensors/Camera.md>  
 
 and run  
-ubuntu@rp5\-ub24j\-mb:~/cam\_ws \$ sudo apt remove libcamera0.2 ros-jazzy\-libcamera  
+ubuntu@rp5\-ub24j\-mb:~/cam\_ws \$ sudo apt remove libcamera0.5 ros-jazzy\-libcamera  
 
 ### A possible future release is” rpicam-apps”
 
@@ -192,6 +199,7 @@ is:
 \$ cd ~/camera\_ws/  
 \$ rosdep install -y --from-paths src --ignore-src --rosdistro
 \$ROS_DISTRO --skip-keys=libcamera  
+#### Delete ros-jazzy-libcamera, \$ sudo remove ros-jazzy-ros-camera  
 \$ colcon build --event-handlers=console\_direct+ 
 \$ . install/setup.bash
 
@@ -242,7 +250,7 @@ If Camera Calibration is not done, on running “camera\_node" an error message 
 /home/ubuntu/.ros/camera\_info/imx219\_\_base_soc_i2c0mux_i2c_1_imx219_10_640x480.yaml** appears
 because the calibration file is missing. 
 
-#### You may want to do a [Camera Calibration Procedure](https://docs.ros.org/en/rolling/p/camera_calibration/) 
+#### You may want to do a [Camera Calibration Procedure](https://docs.nav2.org/tutorials/docs/camera_calibration.html) and [How to Calibrate a Monocular Camera](https://wiki.ros.org/camera_calibration/Tutorials/MonocularCalibration)
 
 After performing the calibration, place the corresponding info file in the specified
 folder.  
