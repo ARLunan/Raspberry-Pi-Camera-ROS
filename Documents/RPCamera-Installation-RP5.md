@@ -5,8 +5,8 @@ Version: February 3, 2026
 
 #### 1.1. **<u>Purpose</u>**
 
-This document is based on discussions on the HBRobotics Forum Dec 17-18, 2024 (and revised in January 2026), with much appreciation for all those contributing:
-<https://groups.google.com/g/hbrobotics/c/4VITfijo2cM/m/80LidlKAAgAJ> .
+This document is based on discussions on the HBRobotics Forum Dec 17-18, 2024 (and revised in February 2026), with much appreciation for all those contributing:
+<https://groups.google.com/g/hbrobotics> . The February 2026 update describes the use of **Debian** installed **camera_ros package** vs Build from Source of previous commits.
 An additional reference with basic and python bindings testing is :
 <https://github.com/slgrobotics/robots_bringup/blob/main/Docs/Sensors/Camera.md>
 
@@ -20,7 +20,7 @@ While this document was intended to apply to a Raspberry Pi 5, it also should wo
 
 The principle installed package a ROS 2 “**camera_ros**” package :
 <https://github.com/christianrauch/camera_ros> that publishes the camera
-video data on ros topics. The necessary libraries are installed from binaries.
+video data on ros topics. The necessary libraries are installed from binaries and the essential upgraded libcamera*.x packages installed from a ppa, described to follow.
 
 The previously used "classic" **libcamera** package is not installed, replaced by **rpicam**
 
@@ -28,6 +28,8 @@ The previously used "classic" **libcamera** package is not installed, replaced b
 
 #### 2.1. Install Ubuntu OS – Ubuntu 24.04 on Raspberry Pi (64 Bit)
   
+Skip to** 2.2** if Raspberry Pi OS is alreay configured for Ubuntu 24.04.  
+
 https://ubuntu.com/download/raspberry-pi  
   
 Use the Raspberry Pi **rpi-imager**  
@@ -50,7 +52,9 @@ Check which groups the current user belongs to include ubuntu and video
 \$ groups
 List display should now include video and video
 
-#### 2.4. Install ros-jazzy-desktop, build packages and configure workspace
+#### 2.4. Install ros-jazzy-desktop, build packages and configure workspace  
+
+Skip to 2.5 if ROS 2 Jazzy already installed and configured  
 <https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debs.html>
 <https://docs.ros.org/en/jazzy/Tutorials/Beginner-Client-Libraries/Colcon-Tutorial.html>
 
@@ -68,7 +72,6 @@ transparent support for transporting images in low-bandwidth compressed
 formats.
 
 - v4l-utils: A camera management utility. <https://github.com/gjasny/v4l-utils>
-- v4ltools: This is simple V4L2 tools based on libv4l2cpp <https://github.com/mpromonet/v4l2tools> -Not used here 
 - ros-jazzy-image-transport-plugins <https://github.com/ros-perception/image_transport_plugins>
 - raspi-config: A tool for configuring camera device connection on
   Raspberry Pi.
@@ -77,7 +80,7 @@ Install raspi-config, v4l-utils, ros-jazzy-image-transport-plugins
 \$ sudo apt install ros-jazzy-image-transport-plugins v4l-utils raspi-config 
 
 
-While some camera installation procedure include installing the Raspberry Pi raspi-config, it is **NOT** recommended be used to set the camera parameers due reports of breaking the SD Card. It is useful for setting other Interface Parameters, such is 12C if that is used.
+While some camera installation procedures include installing the Raspberry Pi raspi-config, it is **NOT** recommended be used to set the camera parameers due reports of breaking the SD Card. It is useful for setting other Interface Parameters, such is 12C if that is used in the robot system.
 
 **raspi-config**  
 <https://www.raspberrypi.com/documentation/computers/configuration.html>
@@ -245,11 +248,14 @@ Packages
 - The contents of [Marco's Personal Package Archives](https://launchpad.net/~marco-sonic/+archive/ubuntu/rasppios) are _not checked or monitored_. You install software from them **at your own risk**. 
 
 \$ sudo add-apt-repository ppa:marco\-sonic/rasppios  
-\$ sudo apt update && \$ sudo apt upgrade  
+\$ sudo apt update && \$ sudo apt dist-upgrade  
 
 On my machine previously installed "libcamera" package was automatically upgraded with Marco's binary. If not, run this script:
 
 \$ sudo apt install libcamera-tools rpicam-apps-lite python3-picamera2
+
+When the ppa is upgraded, simple run  
+\$ sudo apt update && \$ sudo apt dist-upgrade 
 
 Make sure you are a member of group "_video_", for example my "_ubuntu_" account already is:
 
@@ -271,7 +277,8 @@ binaries to a newer version.
 If during a system update or after running rosdep Marco's packages are replaced, you can fix that easily, for example: following the instructions near the end of: 
 <https://github.com/slgrobotics/robots_bringup/blob/main/Docs/Sensors/Camera.md>  
 
-####3.1 Rpicam Apps  (sucessor to classic libcamera-* commands)
+####3.1 Rpicam Apps  (successor to classic libcamera-* commands)
+**Warning: As of February 2026, only one of these apps function, rpicam-still --list-cameras. The others are "work-in-progress"**  
 \$ rpicam-hello -t 5000: A simple "hello world" for your camera. It opens a live preview window for 5 seconds to verify the connection.  
 \$ rpicam-hello --list-cameras  
 \$ rpicam-still -o test.jpg: Used for capturing still images. It emulates most features of the legacy raspistill.  
@@ -280,39 +287,39 @@ If during a system update or after running rosdep Marco's packages are replaced,
 \$ rpicam-raw: Captures unprocessed Bayer data directly from the sensor for advanced post-processing. 
   
 
-### 4. ROS 2 "camera_ros" Package  ** Note: This Section is work-in-progress under revision in Feb 2026 to remove the requirement to "Build" this package from source" and should not be used until released . ** 
+### 4. ROS 2 "camera\_ros" Package  ** Note: This Section is the latest at February 2026 that enable the Debian installation of the camera_ros package** 
 
-#### 4.1 Install “camera_ros” package that publishes camera output as a topic, from Source for compatibility with the revised Libcamera Package described in Par. 3 of this document. 
+#### 4.1 Install “camera_ros” package that publishes camera output as a topic, used with ppa installed Libcamera Package described in Par. 3 of this document. 
 
 **Developed and maintained by:**  
 **<https://github.com/christianrauch/camera_ros>**
 
-\$ mkdir -p camera\_ws/src  
-\$ cd camera\_ws  
-\$ git clone <https://github.com/christianrauch/camera_ros.git>  
-\# resolve binary dependencies and build workspace  
-\$ source /opt/ros/\$ROS\_DISTRO/setup.bash  
-\$ cd ~/camera\_ws/  
-\$ rosdep install -y --from-paths src --ignore-src --rosdistro
-\$ROS_DISTRO --skip-keys=libcamera  
-#### 4.2. Delete ros-jazzy-libcamera, \$ sudo remove ros-jazzy-libcamera  
-\$ colcon build --event-handlers=console\_direct+  
-\$ . install/setup.bash
+\$ sudo apt install ros-jazzy-camera-ros
 
-**OR to permanently configure this package to run from anywhere**  
+#### 4.2. Delete ros-jazzy-libcamera, \$ sudo remove ros-jazzy-libcamera  
+
+**OR if not already doe so, to permanently configure this package to run from anywhere**  
 With \$ nano edit .bashrc, and add the line:  
-\$ source /home/ubuntu/camera\_ws/install/setup.bash  
+\$ source /opt/ros/jazzy/setup.bash  
 \$ . .bashrc  
 To Check installation
-\$ ros2 pkg list| grep camera, should list  
+\$ ros2 pkg list | grep camera, should list  
 camera\_calibration\_parsers  
 camera\_info\_manager  
 camera\_ros
 
 Now, any Terminal that opens will source this package.  
-**In a Terminal**,  
+**In a Terminal**,  either for standalone executable   
 \$ ros2 run camera\_ros camera_node  
 Default options -–ros-args -p camera:=0 -p role:=viewfinder  
+For standalone executable with other parameters listed in the repository:  
+\$ros2 run camera\_ros camera\_node --ros-args -p param1:=arg1 -p param2:=arg2  
+
+**Or**
+
+For a Raspberry Pi configuration deployed with a Keyboard and Monitor, run  
+\$ ros2 launch camera_ros camera.launch.py  
+Default options camera:=0 role:=viewfinder, width:=800 depth:=640   
 
 **In a 2<sup>nd</sup> Terminal,**  
 \$ ros2 run rqt\_image\_view rqt\_image\_view /camera/image_raw
